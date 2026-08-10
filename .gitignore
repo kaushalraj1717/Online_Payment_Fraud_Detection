@@ -1,0 +1,5 @@
+﻿__pycache__/
+*.pyc
+new_data.csv
+.venv/
+

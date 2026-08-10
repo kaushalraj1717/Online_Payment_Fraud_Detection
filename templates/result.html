@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fraud Prediction Result</title>
+    <style>
+        :root {
+            --bg-start: #0b1020;
+            --bg-end: #111827;
+            --panel-bg: rgba(15, 23, 42, 0.9);
+            --card-bg: rgba(30, 41, 59, 0.9);
+            --text: #eff6ff;
+            --muted: #cbd5e1;
+            --border: rgba(148, 163, 184, 0.2);
+            --button: #2563eb;
+            --button-2: #1d4ed8;
+        }
+        body.light-mode {
+            --bg-start: #eef6ff;
+            --bg-end: #dbeafe;
+            --panel-bg: rgba(255,255,255,0.8);
+            --card-bg: rgba(255,255,255,0.8);
+            --text: #0f172a;
+            --muted: #475569;
+            --border: rgba(59,130,246,0.15);
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, var(--bg-start), var(--bg-end) 50%, #1e293b);
+            color: var(--text);
+            padding: 24px 16px;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+        .container {
+            max-width: 820px;
+            margin: 0 auto;
+            background: var(--panel-bg);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            padding: 24px;
+            box-shadow: 0 18px 40px rgba(0,0,0,0.3);
+        }
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+        .theme-toggle {
+            border: none;
+            background: #e2e8f0;
+            color: #0f172a;
+            border-radius: 999px;
+            width: 54px;
+            height: 30px;
+            position: relative;
+            cursor: pointer;
+        }
+        .theme-toggle::after {
+            content: "";
+            position: absolute;
+            top: 4px;
+            left: 5px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #0f172a;
+            transition: transform 0.25s ease;
+        }
+        body.light-mode .theme-toggle::after {
+            transform: translateX(24px);
+        }
+        h1 {
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: clamp(28px, 4vw, 40px);
+        }
+        .result {
+            text-align: center;
+            font-size: clamp(20px, 3vw, 30px);
+            font-weight: bold;
+            padding: 22px 18px;
+            border-radius: 18px;
+            margin-bottom: 22px;
+            background: {% if prediction == 1 %}linear-gradient(135deg, #7f1d1d, #991b1b){% else %}linear-gradient(135deg, #14532d, #166534){% endif %};
+            border: 1px solid rgba(255,255,255,0.15);
+            color: white;
+        }
+        .risk-meter {
+            margin-bottom: 22px;
+            background: rgba(15, 23, 42, 0.35);
+            border-radius: 14px;
+            padding: 14px;
+        }
+        .meter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            color: var(--muted);
+        }
+        .meter-track {
+            height: 16px;
+            background: rgba(148, 163, 184, 0.2);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+        .meter-fill {
+            height: 100%;
+            width: {{ probability }}%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #22c55e, #facc15, #ef4444);
+            transition: width 0.8s ease;
+        }
+        .details {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 18px;
+            border: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px 18px;
+        }
+        .details p {
+            margin: 0;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: rgba(30, 41, 59, 0.9);
+        }
+        .actions {
+            display: flex;
+            justify-content: center;
+            margin-top: 22px;
+        }
+        a {
+            display: inline-block;
+            text-decoration: none;
+            background: linear-gradient(135deg, var(--button), var(--button-2));
+            color: white;
+            padding: 12px 18px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+        @media (max-width: 680px) {
+            .details { grid-template-columns: 1fr; }
+            .topbar { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="topbar">
+            <h1>Prediction Result</h1>
+            <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme"></button>
+        </div>
+
+        <div class="result">
+            {{ result }}<br>
+            Fraud probability: {{ probability }}%
+        </div>
+
+        <div class="risk-meter" aria-live="polite">
+            <div class="meter-header">
+                <span>Real-time Risk Meter</span>
+                <strong>{{ probability }}%</strong>
+            </div>
+            <div class="meter-track">
+                <div class="meter-fill"></div>
+            </div>
+        </div>
+
+        <div class="details">
+            <p><strong>Transaction Type:</strong> {{ transaction.type }}</p>
+            <p><strong>Amount:</strong> {{ transaction.amount }}</p>
+            <p><strong>Old Balance (Origin):</strong> {{ transaction.oldbalanceOrg }}</p>
+            <p><strong>New Balance (Origin):</strong> {{ transaction.newbalanceOrig }}</p>
+            <p><strong>Old Balance (Destination):</strong> {{ transaction.oldbalanceDest }}</p>
+            <p><strong>New Balance (Destination):</strong> {{ transaction.newbalanceDest }}</p>
+        </div>
+
+        <div class="actions" style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <a href="/">Back to form</a>
+            <form method="POST" action="/download-pdf" style="margin: 0;">
+                <input type="hidden" name="step" value="{{ transaction.step }}">
+                <input type="hidden" name="type" value="{{ transaction.type }}">
+                <input type="hidden" name="amount" value="{{ transaction.amount }}">
+                <input type="hidden" name="oldbalanceOrg" value="{{ transaction.oldbalanceOrg }}">
+                <input type="hidden" name="newbalanceOrig" value="{{ transaction.newbalanceOrig }}">
+                <input type="hidden" name="oldbalanceDest" value="{{ transaction.oldbalanceDest }}">
+                <input type="hidden" name="newbalanceDest" value="{{ transaction.newbalanceDest }}">
+                <button type="submit" style="padding: 12px 18px; border: none; border-radius: 12px; background: linear-gradient(135deg, #10b981, #059669); color: white; font-weight: 600; cursor: pointer;">Download PDF</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const body = document.body;
+        const toggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme');
+
+        if (savedTheme === 'light') {
+            body.classList.add('light-mode');
+        }
+
+        toggle.addEventListener('click', () => {
+            body.classList.toggle('light-mode');
+            localStorage.setItem('theme', body.classList.contains('light-mode') ? 'light' : 'dark');
+        });
+    </script>
+</body>
+</html>
