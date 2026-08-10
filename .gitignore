@@ -2,4 +2,5 @@
 *.pyc
 new_data.csv
 .venv/
+.ipynb_checkpoints/
 
