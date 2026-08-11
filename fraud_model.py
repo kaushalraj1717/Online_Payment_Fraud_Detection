@@ -137,10 +137,19 @@ def train_and_save_model(path: str | Path = DATA_PATH, model_path: str | Path = 
 
 
 def ensure_model_exists(path: str | Path = DATA_PATH, model_path: str | Path = MODEL_PATH, dataset_url: str | None = None):
-    if not Path(model_path).exists():
-        return train_and_save_model(path, model_path, dataset_url=dataset_url)
-    bundle = joblib.load(model_path)
-    return {'accuracy': float(bundle.get('accuracy', 0.0)), 'model_path': str(model_path)}
+    model_file = Path(model_path)
+    if not model_file.exists():
+        return train_and_save_model(path, model_file, dataset_url=dataset_url)
+
+    try:
+        bundle = joblib.load(model_file)
+        if not isinstance(bundle, dict) or 'pipeline' not in bundle:
+            raise ValueError('Saved model bundle is malformed.')
+    except Exception:
+        model_file.unlink(missing_ok=True)
+        return train_and_save_model(path, model_file, dataset_url=dataset_url)
+
+    return {'accuracy': float(bundle.get('accuracy', 0.0)), 'model_path': str(model_file)}
 
 
 def predict_fraud(data: dict | pd.DataFrame):
@@ -148,7 +157,12 @@ def predict_fraud(data: dict | pd.DataFrame):
     if not model_path.exists():
         ensure_model_exists()
 
-    bundle = joblib.load(model_path)
+    try:
+        bundle = joblib.load(model_path)
+    except Exception:
+        ensure_model_exists()
+        bundle = joblib.load(model_path)
+
     pipeline = bundle['pipeline']
 
     if isinstance(data, dict):
